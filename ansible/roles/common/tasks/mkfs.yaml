@@ -29,4 +29,4 @@
         #opts: noatime
         state: mounted
     when: data.stat.exists and format_fs is not defined
-  when: data_device_path is defined
+  when: manage_data_device | bool and data_device_path is defined

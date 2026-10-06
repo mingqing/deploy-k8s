@@ -1,15 +1,10 @@
 ---
-
-- import_tasks: calico.yaml
-  when: network_plugin == "calico"
-- import_tasks: cilium.yaml
-  when: network_plugin == "cilium"
-- import_tasks: containerd.yaml
-- import_tasks: kubernetes.yaml
-- import_tasks: kustomize.yaml
-- import_tasks: kata.yaml
-  when: kata_containers_enabled
-- import_tasks: pause.yaml
-  when: ansible_system == "Linux"
-- import_tasks: etcd.yaml
-- import_tasks: coredns.yaml
+- ansible.builtin.include_tasks: modern.yaml
+  when: modern_profile | bool
+- name: Validate legacy architecture
+  ansible.builtin.assert:
+    that: server_arch == 'amd64'
+    fail_msg: "Legacy profiles only support amd64; use v1.36 for arm64."
+  when: not modern_profile | bool
+- ansible.builtin.include_tasks: legacy.yaml
+  when: not modern_profile | bool

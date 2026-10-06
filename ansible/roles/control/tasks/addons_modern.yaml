@@ -1,0 +1,29 @@
+---
+- name: Create modern addon directories
+  ansible.builtin.file:
+    path: "{{ etc_dir }}/addons/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop: [kube-system/cluster, coredns/cluster, coredns/config/configmap, coredns/service, coredns/workloads, cilium]
+- name: Render CoreDNS manifests
+  ansible.builtin.template:
+    src: "addons/coredns/{{ item }}.j2"
+    dest: "{{ etc_dir }}/addons/coredns/{{ item }}"
+    mode: '0644'
+  loop: [kustomization.yaml, cluster/roles.yaml, config/configmap/Corefile, service/services.yaml, workloads/deployment.yaml]
+- name: Render modern Cilium chart values
+  ansible.builtin.template:
+    src: addons/cilium/values-modern.yaml.j2
+    dest: "{{ etc_dir }}/addons/cilium/values.yaml"
+    mode: '0644'
+
+- name: Render minimal bootstrap permissions
+  ansible.builtin.template:
+    src: addons/kube-system/cluster/roles.yaml.j2
+    dest: "{{ etc_dir }}/addons/kube-system/cluster/roles.yaml"
+    mode: '0644'
+- name: Render minimal kube-system kustomization
+  ansible.builtin.copy:
+    dest: "{{ etc_dir }}/addons/kube-system/kustomization.yaml"
+    content: "apiVersion: kustomize.config.k8s.io/v1beta1\nkind: Kustomization\nresources:\n- cluster/roles.yaml\n"
+    mode: '0644'

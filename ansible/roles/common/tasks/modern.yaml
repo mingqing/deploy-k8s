@@ -1,0 +1,45 @@
+---
+- name: Install distribution dependencies
+  ansible.builtin.package:
+    name: "{{ packages[ansible_os_family] }}"
+    state: present
+  vars:
+    packages:
+      Debian: [socat, ipvsadm, iptables, iproute2, chrony, conntrack, libseccomp2, file]
+      RedHat: [socat, ipvsadm, iptables, iproute, chrony, conntrack-tools, libseccomp, file, bpftool, container-selinux]
+- name: Keep SELinux enforcing with distribution container policy
+  ansible.builtin.debug:
+    msg: "SELinux and firewalld remain managed by the host. Verify container policy and cluster port access before bootstrap."
+- name: Disable active swap
+  ansible.builtin.command: swapoff -a
+  when: disable_swap | bool and ansible_swaptotal_mb > 0
+- name: Disable swap mounts on reboot
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^(?!#)(.*\s+swap\s+.*)$'
+    replace: '# \1'
+  when: disable_swap | bool
+- name: Disable Fedora zram swap generation
+  ansible.builtin.copy:
+    dest: /etc/systemd/zram-generator.conf
+    content: "# Swap disabled for Kubernetes by deploy-k8s\n"
+    mode: '0644'
+  when: disable_swap | bool and ansible_distribution == 'Fedora'
+- ansible.builtin.import_tasks: adduser.yaml
+- ansible.builtin.import_tasks: directory.yaml
+- ansible.builtin.import_tasks: hosts.yaml
+- name: Enable time synchronization
+  ansible.builtin.systemd_service:
+    name: "{{ 'chrony' if ansible_os_family == 'Debian' else 'chronyd' }}"
+    enabled: true
+    state: started
+
+- name: Create kubelet service and seccomp directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /etc/default
+    - /etc/systemd/system/kubelet.service.d
+    - "{{ data_dir }}/kubelet/seccomp/profiles"

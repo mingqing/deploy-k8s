@@ -1,0 +1,15 @@
+---
+
+- import_tasks: calico.yaml
+  when: network_plugin == "calico"
+- import_tasks: cilium.yaml
+  when: network_plugin == "cilium"
+- import_tasks: containerd.yaml
+- import_tasks: kubernetes.yaml
+- import_tasks: kustomize.yaml
+- import_tasks: kata.yaml
+  when: kata_containers_enabled
+- import_tasks: pause.yaml
+  when: ansible_system == "Linux"
+- import_tasks: etcd.yaml
+- import_tasks: coredns.yaml

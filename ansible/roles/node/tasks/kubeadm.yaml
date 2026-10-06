@@ -6,7 +6,7 @@
   register: kubeadm
 - name: 拷贝 kubeadm 二进制文件
   copy:
-    src: ../../binary/files/kubernetes/server/bin/kubeadm
+    src: "{{ '../../binary/files/kubernetes/' + k8s_version + '/' + server_arch + '/kubeadm' if modern_profile | bool else '../../binary/files/kubernetes/server/bin/kubeadm' }}"
     dest: /usr/bin/kubeadm
     owner: root
     group: root

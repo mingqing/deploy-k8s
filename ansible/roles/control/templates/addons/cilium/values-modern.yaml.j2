@@ -1,0 +1,20 @@
+# Install with: cilium install --version {{ cilium_version | replace('v', '') }} --values {{ etc_dir }}/addons/cilium/values.yaml
+kubeProxyReplacement: true
+k8sServiceHost: {{ apiserver_haip }}
+k8sServicePort: {{ apiserver_port }}
+routingMode: tunnel
+tunnelProtocol: vxlan
+operator:
+  replicas: {{ [groups['kube_control_plane'] | length, 2] | min }}
+ipam:
+  mode: cluster-pool
+  operator:
+    clusterPoolIPv4PodCIDRList: ["{{ cluster_cidr }}"]
+    clusterPoolIPv4MaskSize: {{ node_cidr_mask }}
+# Validate the core datapath first, then opt into L7/Envoy/Hubble.
+envoy:
+  enabled: false
+hubble:
+  enabled: false
+bpf:
+  masquerade: true

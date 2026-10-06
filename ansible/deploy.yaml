@@ -22,6 +22,17 @@
   - group_vars/cloud-provider/{{ cloud_provider }}.yaml
   - group_vars/component-{{ k8s_version.split('.')[:2] | join('.') }}.yaml
 
+- name: Validate modern target nodes before changing them
+  hosts: kube_control_plane,kube_node
+  remote_user: root
+  tags: [common, control, worker, preflight]
+  roles:
+    - role: preflight
+      when: modern_profile | bool
+  vars_files:
+    - group_vars/default.yaml
+    - group_vars/component-{{ k8s_version.split('.')[:2] | join('.') }}.yaml
+
 - name: 针对所有节点实现公共基础配置
   hosts: kube_control_plane,kube_node
   remote_user: root

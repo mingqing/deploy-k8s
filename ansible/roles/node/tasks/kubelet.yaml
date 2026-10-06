@@ -83,7 +83,7 @@
   block:
   - name: 拷贝 kubelet 二进制文件
     copy:
-      src: ../../binary/files/kubernetes/server/bin/kubelet
+      src: "{{ '../../binary/files/kubernetes/' + k8s_version + '/' + server_arch + '/kubelet' if modern_profile | bool else '../../binary/files/kubernetes/server/bin/kubelet' }}"
       dest: "{{ install_dir }}/kubelet"
       owner: root
       group: root

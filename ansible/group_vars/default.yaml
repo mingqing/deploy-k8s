@@ -17,7 +17,7 @@ apiserver_addr: https://{{ apiserver_host }}:{{ apiserver_port }}
 timezone: Asia/Shanghai
 
 # 在系统级禁用ipv6
-disable_ipv6: true
+disable_ipv6: false
 
 # k8s组件二进制安装目录
 install_dir: /usr/bin
@@ -51,9 +51,17 @@ master_cluster_ip: "{{ service_cluster_ip_range.split('.')[0:3] | join('.') }}.1
 # 在 {{ service_cluster_ip_range }} 网段范围内，一般取第十个
 cluster_dns: "{{ service_cluster_ip_range.split('.')[0:3] | join('.') }}.10"
 
-# TODO
-# 服务端cpu架构，当前仅支持amd64
-server_arch: amd64
+# 目标节点架构，与下载控制机架构无关；可在 host_vars 中覆盖
+architecture_map:
+  x86_64: amd64
+  aarch64: arm64
+  arm64: arm64
+server_arch: "{{ architecture_map[ansible_architecture] }}"
+# 下载控制机需要准备的架构，混合集群填写 [amd64, arm64]
+binary_architectures: [amd64, arm64]
+manage_data_device: false
+# 为现代 profile 保留 cgroup v2，不修改 Asahi 引导配置
+modern_profile: "{{ k8s_version is version('v1.36.0', '>=') }}"
 
 # 签名ca多少天后过期，默认20年
 ca_expiry_days: 7300
