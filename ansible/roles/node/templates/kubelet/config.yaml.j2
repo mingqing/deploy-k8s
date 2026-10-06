@@ -30,7 +30,9 @@ nodeLeaseDurationSeconds: 40
 imageMinimumGCAge: 2m
 imageGCHighThresholdPercent: 85
 imageGCLowThresholdPercent: 80
+{% if not modern_profile | bool %}
 kubeletCgroups: /systemd/system.slice
+{% endif %}
 cgroupDriver: systemd
 hairpinMode: promiscuous-bridge
 maxPods: {{ node_max_pods }}

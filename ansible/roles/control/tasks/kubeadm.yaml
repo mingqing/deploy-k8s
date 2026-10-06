@@ -9,7 +9,7 @@
 
 - name: 创建 kubeadm config.yaml
   template:
-    src: kubeadm/config.yaml.j2
+    src: "{{ 'kubeadm/config-v1beta4.yaml.j2' if modern_profile | bool else 'kubeadm/config.yaml.j2' }}"
     dest: "{{ etc_dir }}/kubeadm/config.yaml"
     owner: "{{ kube_user.name }}"
     group: root
@@ -63,7 +63,6 @@
     group: root
     mode: 0600
   with_items:
-    - etcd.yaml
     - kube-apiserver.yaml
     - kube-controller-manager.yaml
     - kube-scheduler.yaml
@@ -118,3 +117,10 @@
     group: root
     mode: 0600
     backup: no
+
+- name: Create local etcd static pod only when managed
+  ansible.builtin.template:
+    src: manifests/etcd.yaml.j2
+    dest: "{{ etc_dir }}/manifests/etcd.yaml"
+    mode: '0600'
+  when: not external_etcd | bool

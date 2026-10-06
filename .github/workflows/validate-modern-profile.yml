@@ -1,0 +1,23 @@
+name: Validate minimal Kubernetes profile
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  templates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'ansible-core>=2.19,<2.20' pyyaml jinja2 packaging
+      - run: ansible-galaxy collection install -r ansible/requirements.yml
+      - run: python -m unittest discover -s tests -v
+      - name: Syntax check modern profile
+        working-directory: ansible
+        run: ansible-playbook -i hosts_macmini_sample.ini deploy.yaml --syntax-check -e k8s_version=v1.36.5 -e cloud_provider=private
+      - name: Render configurations with Ansible
+        run: ansible-playbook -i ansible/hosts_macmini_sample.ini tests/render-configs.yaml

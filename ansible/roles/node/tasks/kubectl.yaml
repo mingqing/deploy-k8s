@@ -10,7 +10,7 @@
 
 - name: 拷贝 kubectl 二进制文件
   copy:
-    src: ../../binary/files/kubernetes/server/bin/kubectl
+    src: "{{ '../../binary/files/kubernetes/' + k8s_version + '/' + server_arch + '/kubectl' if modern_profile | bool else '../../binary/files/kubernetes/server/bin/kubectl' }}"
     dest: /usr/bin/kubectl
     owner: root
     group: root
@@ -24,4 +24,4 @@
     owner: root
     group: root
     mode: 0755
-  when: kustomize.stat.exists == False
+  when: not modern_profile | bool and kustomize.stat.exists == False

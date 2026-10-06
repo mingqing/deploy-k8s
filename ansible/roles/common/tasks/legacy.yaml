@@ -1,0 +1,12 @@
+---
+
+# mkfs.yaml有挂载目录需在directory.yaml之前
+
+- import_tasks: mkfs.yaml
+- import_tasks: hosts.yaml
+- import_tasks: grub.yaml
+- import_tasks: adduser.yaml
+- import_tasks: package.yaml
+- import_tasks: directory.yaml
+- import_tasks: bpftool.yaml
+  when: network_plugin == "cilium"

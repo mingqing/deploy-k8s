@@ -1,7 +1,5 @@
 ---
-
-- import_tasks: cri.yaml
-- import_tasks: containerd.yaml
-- import_tasks: kata.yaml
-  when: kata_containers_enabled
-- import_tasks: registry.yaml
+- ansible.builtin.include_tasks: modern.yaml
+  when: modern_profile | bool
+- ansible.builtin.include_tasks: legacy.yaml
+  when: not modern_profile | bool

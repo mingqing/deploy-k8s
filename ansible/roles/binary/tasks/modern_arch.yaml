@@ -1,0 +1,46 @@
+---
+- name: Create versioned architecture cache
+  ansible.builtin.file:
+    path: "roles/binary/files/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "kubernetes/{{ k8s_version }}/{{ download_arch }}"
+    - "containerd/{{ containerd_version }}/{{ download_arch }}"
+    - "runc/{{ runc_version }}/{{ download_arch }}"
+    - "cni/{{ cni_plugins_version }}/{{ download_arch }}"
+    - "crictl/{{ crictl_version }}/{{ download_arch }}"
+    - "cilium/{{ cilium_cli_version }}/{{ download_arch }}"
+    - "hubble/{{ hubble_version }}/{{ download_arch }}"
+- name: Download Kubernetes executables and verify upstream SHA256
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ k8s_version }}/bin/linux/{{ download_arch }}/{{ item }}"
+    dest: "roles/binary/files/kubernetes/{{ k8s_version }}/{{ download_arch }}/{{ item }}"
+    checksum: "sha256:https://dl.k8s.io/release/{{ k8s_version }}/bin/linux/{{ download_arch }}/{{ item }}.sha256"
+    mode: '0755'
+  loop: [kubelet, kubectl, kubeadm]
+- name: Download runtime and CLI archives with upstream SHA256
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "roles/binary/files/{{ item.path }}"
+    checksum: "sha256:{{ item.checksum }}"
+    mode: '0644'
+  loop:
+    - url: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-{{ download_arch }}.tar.gz"
+      path: "containerd/{{ containerd_version }}/{{ download_arch }}/containerd.tar.gz"
+      checksum: "https://github.com/containerd/containerd/releases/download/v{{ containerd_version }}/containerd-{{ containerd_version }}-linux-{{ download_arch }}.tar.gz.sha256sum"
+    - url: "https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.{{ download_arch }}"
+      path: "runc/{{ runc_version }}/{{ download_arch }}/runc.{{ download_arch }}"
+      checksum: "https://github.com/opencontainers/runc/releases/download/{{ runc_version }}/runc.sha256sum"
+    - url: "https://github.com/containernetworking/plugins/releases/download/{{ cni_plugins_version }}/cni-plugins-linux-{{ download_arch }}-{{ cni_plugins_version }}.tgz"
+      path: "cni/{{ cni_plugins_version }}/{{ download_arch }}/cni.tgz"
+      checksum: "https://github.com/containernetworking/plugins/releases/download/{{ cni_plugins_version }}/cni-plugins-linux-{{ download_arch }}-{{ cni_plugins_version }}.tgz.sha256"
+    - url: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-{{ download_arch }}.tar.gz"
+      path: "crictl/{{ crictl_version }}/{{ download_arch }}/crictl.tar.gz"
+      checksum: "https://github.com/kubernetes-sigs/cri-tools/releases/download/{{ crictl_version }}/crictl-{{ crictl_version }}-linux-{{ download_arch }}.tar.gz.sha256"
+    - url: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version }}/cilium-linux-{{ download_arch }}.tar.gz"
+      path: "cilium/{{ cilium_cli_version }}/{{ download_arch }}/cilium.tar.gz"
+      checksum: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_version }}/cilium-linux-{{ download_arch }}.tar.gz.sha256sum"
+    - url: "https://github.com/cilium/hubble/releases/download/{{ hubble_version }}/hubble-linux-{{ download_arch }}.tar.gz"
+      path: "hubble/{{ hubble_version }}/{{ download_arch }}/hubble.tar.gz"
+      checksum: "https://github.com/cilium/hubble/releases/download/{{ hubble_version }}/hubble-linux-{{ download_arch }}.tar.gz.sha256sum"

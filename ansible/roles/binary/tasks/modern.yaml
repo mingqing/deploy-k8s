@@ -1,0 +1,13 @@
+---
+- name: Validate requested architectures
+  ansible.builtin.assert:
+    that:
+      - ansible_connection | default('ssh') == 'local'
+      - binary_architectures | length > 0
+      - binary_architectures | difference(['amd64', 'arm64']) | length == 0
+      - not kata_containers_enabled | bool
+- name: Prepare versioned caches per target architecture
+  ansible.builtin.include_tasks: modern_arch.yaml
+  loop: "{{ binary_architectures }}"
+  loop_control:
+    loop_var: download_arch

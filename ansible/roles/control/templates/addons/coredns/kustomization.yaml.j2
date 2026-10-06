@@ -22,5 +22,5 @@ resources:
 - workloads/deployment.yaml
 
 images:
-- name: {{ internal_images.namespace }}/coredns
+- name: {{ internal_images.namespace }}/{{ 'coredns/coredns' if modern_profile | bool else 'coredns' }}
   newTag: {{ internal_images.addons.coredns }}

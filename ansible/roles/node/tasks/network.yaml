@@ -54,4 +54,14 @@
       group: root
       mode: 0755
     when: hubble.stat.exists == False
-  when: network_plugin == "cilium"
+  when: network_plugin == "cilium" and not modern_profile | bool
+
+- name: Install architecture-specific modern network CLIs
+  ansible.builtin.unarchive:
+    src: "../../binary/files/{{ item.component }}/{{ item.version }}/{{ server_arch }}/{{ item.component }}.tar.gz"
+    dest: /usr/local/bin
+    creates: "/usr/local/bin/{{ item.component }}"
+  loop:
+    - {component: cilium, version: "{{ cilium_cli_version }}"}
+    - {component: hubble, version: "{{ hubble_version }}"}
+  when: modern_profile | bool

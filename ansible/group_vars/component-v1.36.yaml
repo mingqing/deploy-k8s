@@ -1,0 +1,145 @@
+# Minimal Kubernetes v1.36.5 profile for NEW clusters. Hardware acceptance pending.
+containerd_version: 2.2.8
+kata_containers_enabled: false
+internal_images:
+  namespace: registry.k8s.io
+  system:
+    pause: 3.10.2
+    etcd: 3.6.8-0
+    kube_apiserver: '{{ k8s_version }}'
+    kube_controller_manager: '{{ k8s_version }}'
+    kube_scheduler: '{{ k8s_version }}'
+    kube_proxy: '{{ k8s_version }}'
+  addons:
+    coredns: v1.14.2
+    cilium: v1.20.2
+    cilium_cli: v0.20.1
+    hubble: v1.19.4
+etcd_args:
+  advertise_client_urls: https://{{ hostvars[inventory_hostname]['ip'] }}:2379
+  auto_tls: 'false'
+  cert_file: '{{ etc_dir }}/pki/etcd/server.crt'
+  client_cert_auth: 'true'
+  data_dir: '{{ data_dir }}/etcd/'
+  election_timeout: '5000'
+  heartbeat_interval: '250'
+  initial_advertise_peer_urls: https://{{ hostvars[inventory_hostname]['ip'] }}:2380
+  initial_cluster: '{% for host in groups[''etcd''] %}{{ host }}=https://{{ hostvars[host][''ip'']
+    }}:2380{% if not loop.last %},{% endif %}{% endfor %}'
+  initial_cluster_state: new
+  initial_cluster_token: '{{ cluster_name }}'
+  key_file: '{{ etc_dir }}/pki/etcd/server.key'
+  listen_client_urls: https://127.0.0.1:2379,https://{{ hostvars[inventory_hostname]['ip']
+    }}:2379
+  listen_metrics_urls: http://127.0.0.1:2381
+  listen_peer_urls: https://{{ hostvars[inventory_hostname]['ip'] }}:2380
+  max_request_bytes: '1048576'
+  name: '{{ inventory_hostname }}'
+  peer_auto_tls: 'false'
+  peer_cert_file: '{{ etc_dir }}/pki/etcd/peer.crt'
+  peer_client_cert_auth: 'true'
+  peer_key_file: '{{ etc_dir }}/pki/etcd/peer.key'
+  peer_trusted_ca_file: '{{ etc_dir }}/pki/etcd/ca.crt'
+  quota_backend_bytes: '4294967296'
+  trusted_ca_file: '{{ etc_dir }}/pki/etcd/ca.crt'
+api_server_args:
+  advertise_address: '{{ hostvars[inventory_hostname][''ip''] }}'
+  default_not_ready_toleration_seconds: '60'
+  default_unreachable_toleration_seconds: '60'
+  goaway_chance: '0.001'
+  request_timeout: 60s
+  delete_collection_workers: '1'
+  etcd_cafile: '{{ etc_dir }}/pki/etcd/ca.crt'
+  etcd_certfile: '{{ etc_dir }}/pki/apiserver-etcd-client.crt'
+  etcd_keyfile: '{{ etc_dir }}/pki/apiserver-etcd-client.key'
+  etcd_prefix: /kubernetes/{{ cluster_domain }}/registry
+  etcd_compaction_interval: 30m
+  etcd_servers: '{% for host in groups[''etcd''] %}https://{{ hostvars[host][''ip'']
+    }}:2379{% if not loop.last %},{% endif %}{% endfor %}'
+  etcd_count_metric_poll_period: 60s
+  etcd_db_metric_poll_interval: 30s
+  etcd_healthcheck_timeout: 2s
+  etcd_readycheck_timeout: 2s
+  storage_backend: etcd3
+  storage_media_type: application/vnd.kubernetes.protobuf
+  watch_cache: 'true'
+  bind_address: '{{ hostvars[inventory_hostname][''ip''] }}'
+  http2_max_streams_per_connection: '10000'
+  secure_port: '6443'
+  tls_cert_file: '{{ etc_dir }}/pki/apiserver.crt'
+  tls_private_key_file: '{{ etc_dir }}/pki/apiserver.key'
+  tls_min_version: VersionTLS12
+  kubelet_client_certificate: '{{ etc_dir }}/pki/apiserver-kubelet-client.crt'
+  kubelet_client_key: '{{ etc_dir }}/pki/apiserver-kubelet-client.key'
+  audit_log_maxage: '30'
+  audit_log_maxbackup: '10'
+  audit_log_maxsize: '1024'
+  audit_log_path: '{{ log_dir }}/audit.log'
+  audit_log_compress: 'true'
+  audit_policy_file: '{{ etc_dir }}/audit-policy.yaml'
+  anonymous_auth: 'false'
+  client_ca_file: '{{ etc_dir }}/pki/ca.crt'
+  enable_bootstrap_token_auth: 'true'
+  requestheader_allowed_names: front-proxy-client
+  requestheader_client_ca_file: '{{ etc_dir }}/pki/front-proxy-ca.crt'
+  requestheader_extra_headers_prefix: X-Remote-Extra-
+  requestheader_group_headers: X-Remote-Group
+  requestheader_username_headers: X-Remote-User
+  proxy_client_cert_file: '{{ etc_dir }}/pki/front-proxy-client.crt'
+  proxy_client_key_file: '{{ etc_dir }}/pki/front-proxy-client.key'
+  service_account_issuer: https://kubernetes.default.svc.{{ cluster_domain }}
+  service_account_key_file: '{{ etc_dir }}/pki/sa.pub'
+  service_account_signing_key_file: '{{ etc_dir }}/pki/sa.key'
+  token_auth_file: '{{ etc_dir }}/known_tokens.csv'
+  authorization_mode: Node,RBAC
+  admission_control_config_file: /etc/kubernetes/policies/admission-controls.yaml
+  enable_aggregator_routing: 'false'
+  event_ttl: 1h
+  kubelet_preferred_address_types: InternalIP,Hostname
+  livez_grace_period: 5m
+  profiling: 'false'
+  service_cluster_ip_range: '{{ service_cluster_ip_range }}'
+  service_node_port_range: 30000-32767
+  v: '0'
+controller_manager_args:
+  profiling: 'false'
+  allocate_node_cidrs: 'false'
+  cluster_cidr: '{{ cluster_cidr }}'
+  cluster_name: '{{ cluster_name }}'
+  controller_start_interval: 1s
+  controllers: '*'
+  use_service_account_credentials: 'true'
+  kube_api_burst: '100'
+  kube_api_qps: '100'
+  bind_address: 127.0.0.1
+  secure_port: '10257'
+  authentication_kubeconfig: '{{ etc_dir }}/controller-manager.conf'
+  authentication_skip_lookup: 'false'
+  authorization_kubeconfig: '{{ etc_dir }}/controller-manager.conf'
+  client_ca_file: '{{ etc_dir }}/pki/ca.crt'
+  cluster_signing_cert_file: '{{ etc_dir }}/pki/ca.crt'
+  cluster_signing_key_file: '{{ etc_dir }}/pki/ca.key'
+  cluster_signing_duration: 43800h0m0s
+  enable_garbage_collector: 'true'
+  namespace_sync_period: 5m0s
+  node_cidr_mask_size: '{{ node_cidr_mask }}'
+  node_eviction_rate: '0.1'
+  node_monitor_grace_period: 40s
+  resource_quota_sync_period: 5m0s
+  root_ca_file: '{{ etc_dir }}/pki/ca.crt'
+  service_account_private_key_file: '{{ etc_dir }}/pki/sa.key'
+  service_cluster_ip_range: '{{ service_cluster_ip_range }}'
+  terminated_pod_gc_threshold: '10'
+  kubeconfig: '{{ etc_dir }}/controller-manager.conf'
+  min_resync_period: 12h0m0s
+  v: '0'
+scheduler_args:
+  config: '{{ etc_dir }}/scheduler-config.yaml'
+  v: '0'
+runc_version: v1.5.2
+cni_plugins_version: v1.9.1
+crictl_version: v1.36.0
+cilium_version: v1.20.2
+cilium_cli_version: v0.20.1
+hubble_version: v1.19.4
+modern_profile: true

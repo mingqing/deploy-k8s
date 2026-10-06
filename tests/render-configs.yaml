@@ -1,0 +1,25 @@
+---
+- hosts: all
+  gather_facts: false
+  vars_files:
+    - ../ansible/group_vars/all.yaml
+    - ../ansible/group_vars/default.yaml
+    - ../ansible/group_vars/component-v1.36.yaml
+  vars:
+    ansible_architecture: aarch64
+    ansible_selinux:
+      status: enabled
+  tasks:
+    - name: Render real templates with Ansible templating
+      ansible.builtin.template:
+        src: "../ansible/roles/{{ item.src }}"
+        dest: "/tmp/deploy-k8s-{{ item.name }}"
+        mode: '0600'
+      loop:
+        - {src: 'runtime/templates/containerd/config-v3.toml.j2', name: containerd.toml}
+        - {src: 'control/templates/kubeadm/config-v1beta4.yaml.j2', name: kubeadm.yaml}
+        - {src: 'control/templates/manifests/kube-apiserver.yaml.j2', name: apiserver.yaml}
+        - {src: 'control/templates/manifests/etcd.yaml.j2', name: etcd.yaml}
+        - {src: 'node/templates/kubelet/config.yaml.j2', name: kubelet.yaml}
+        - {src: 'node/templates/kubelet/kubeadm-flags.env.j2', name: kubelet.env}
+        - {src: 'control/templates/addons/cilium/values-modern.yaml.j2', name: cilium.yaml}

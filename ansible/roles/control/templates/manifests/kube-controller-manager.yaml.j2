@@ -20,7 +20,7 @@ spec:
     - --leader-elect=true
     - --leader-elect-lease-duration=60s
     - --leader-elect-renew-deadline=30s
-    - --leader-elect-resource-lock=endpointsleases
+    - --leader-elect-resource-lock={{ 'leases' if modern_profile | bool else 'endpointsleases' }}
     - --leader-elect-resource-name=kube-controller-manager
     - --leader-elect-resource-namespace=kube-system
     - --leader-elect-retry-period=10s

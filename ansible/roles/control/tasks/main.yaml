@@ -10,8 +10,11 @@
 
 - import_tasks: certs.yaml
 - import_tasks: addons_base.yaml
+  when: not modern_profile | bool
+- import_tasks: addons_modern.yaml
+  when: modern_profile | bool
 - import_tasks: addons_control.yaml
-  when: cluster_role.deployment == "control"
+  when: cluster_role.deployment == "control" and not modern_profile | bool
 - import_tasks: kubeadm.yaml
 - import_tasks: cloud_provider.yaml
   when: cloud_provider != "private"

@@ -1,0 +1,62 @@
+---
+- name: Validate modern deployment scope
+  ansible.builtin.assert:
+    that:
+      - server_arch in ['amd64', 'arm64']
+      - ansible_distribution in ['Debian', 'Ubuntu', 'Fedora']
+      - ansible_service_mgr == 'systemd'
+      - cloud_provider == 'private'
+      - network_plugin == 'cilium'
+      - not kata_containers_enabled | bool
+      - not manage_data_device | bool
+      - not disable_ipv6 | bool
+    fail_msg: "The 1.36 profile supports private-cloud Cilium on systemd amd64/arm64, with directory storage and IPv6 left enabled."
+- name: Detect existing kubelet
+  ansible.builtin.stat:
+    path: "{{ install_dir }}/kubelet"
+  register: preflight_kubelet
+- name: Read installed Kubernetes version
+  ansible.builtin.command: "{{ install_dir }}/kubelet --version"
+  register: installed_kubelet
+  changed_when: false
+  check_mode: false
+  when: preflight_kubelet.stat.exists
+- name: Refuse implicit version upgrade
+  ansible.builtin.assert:
+    that:
+      - installed_kubelet.stdout.split()[-1] == k8s_version
+    fail_msg: "Existing kubelet differs from the requested version. This profile is for fresh clusters or same-version reruns; use a separately reviewed upgrade workflow."
+  when: preflight_kubelet.stat.exists
+- name: Check cgroup filesystem
+  ansible.builtin.command: stat -fc %T /sys/fs/cgroup
+  register: cgroup_fs
+  changed_when: false
+  check_mode: false
+- name: Require cgroup v2
+  ansible.builtin.assert:
+    that: cgroup_fs.stdout == 'cgroup2fs'
+    fail_msg: "Enable cgroup v2 in the OS before deployment; this playbook does not edit bootloader settings."
+- name: Read kernel page size
+  ansible.builtin.command: getconf PAGESIZE
+  register: kernel_page_size
+  changed_when: false
+  check_mode: false
+- name: Show hardware acceptance information
+  ansible.builtin.debug:
+    msg: "arch={{ server_arch }}, kernel={{ ansible_kernel }}, page_size={{ kernel_page_size.stdout }}. ARM64 images still require execution tests on this kernel."
+
+- name: Detect installed containerd
+  ansible.builtin.stat:
+    path: /usr/local/bin/containerd
+  register: preflight_containerd
+- name: Read installed containerd version
+  ansible.builtin.command: /usr/local/bin/containerd --version
+  register: installed_containerd
+  changed_when: false
+  check_mode: false
+  when: preflight_containerd.stat.exists
+- name: Refuse overwriting an existing runtime
+  ansible.builtin.assert:
+    that: containerd_version in (installed_containerd.stdout.split() | map('regex_replace', '^v', '') | list)
+    fail_msg: "Installed containerd differs from the pinned runtime. Prepare a fresh node or use a reviewed runtime migration."
+  when: preflight_containerd.stat.exists
